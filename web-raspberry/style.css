@@ -1,0 +1,32 @@
+body {
+
+          background-color: black;
+          color: white;
+}
+
+.container {
+          margin: 0 auto;
+          text-align: center;
+        }
+        
+#room-table {
+          margin-top: 20px;
+          border-collapse: collapse;
+          border: 2px solid #ffffff;
+}
+        
+#room-table th,
+#room-table td {
+          padding: 10px;
+          text-align: center;
+          border: 1px solid #ffffff;
+}
+        
+#room-table th {
+          font-weight: bold;
+}
+        
+#room-table th:first-child,
+#room-table td:first-child {
+          text-align: left;
+}
