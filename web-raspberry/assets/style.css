@@ -30,3 +30,19 @@ body {
 #room-table td:first-child {
           text-align: left;
 }
+
+::-webkit-scrollbar {
+  display:  none;
+}
+
+.green {
+  color : rgb(33, 193, 33);
+}
+
+.red {
+  color: red;
+}
+
+.grey {
+  color: grey;
+}

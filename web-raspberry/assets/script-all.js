@@ -1,23 +1,35 @@
-fetch('https://rawcdn.githack.com/akabab/superhero-api/0.2.0/api/all.json')
-  .then((response) => response.json())
-  .then(data => {
-     loadData(data, 0, 25)
-})
+fetch('http://192.168.137.23/api/rooms')
+.then(response => response.json())
+.then(data => {
+  const roomTable = document.getElementById('room-table')
+  const tbody = roomTable.getElementsByTagName('tbody')[0]
 
-function loadData(data, start, end) {
-  const tableBody = document.querySelector('#room-table tbody')
-  for (let i = start; i < end; i++) {
-    const room = data[i]
-    const row = document.createElement('tr')
-    const idCell = document.createElement('td')
-    idCell.textContent = room.id
-    const statusCell = document.createElement('td')
-    statusCell.textContent = room.name
-    const nbCell = document.createElement('td')
-    nbCell.textContent = room.appearance.race
-    row.appendChild(idCell)
-    row.appendChild(statusCell)
-    row.appendChild(nbCell)
-    tableBody.appendChild(row)
-  }
-}
+  data.forEach(room => {
+    const tr = document.createElement('tr')
+    const idTd = document.createElement('td')
+    const statusTd = document.createElement('td')
+    const freePlacesTd = document.createElement('td')
+
+    idTd.textContent = room.number
+    const freePlaces = parseInt(room.capacity) - parseInt(room.booked)
+    freePlacesTd.textContent = freePlaces + " / " + room.capacity
+
+    let status = "disponible"
+    if (room.capacity === room.booked) {
+      status = "complet"
+      statusTd.classList.add("red")
+    } else {
+      statusTd.classList.add("green")
+
+    }
+    statusTd.textContent = status
+
+    tr.appendChild(idTd)
+    tr.appendChild(statusTd)
+    tr.appendChild(freePlacesTd)
+    tbody.appendChild(tr)
+  })
+})
+.catch(error => {
+  console.error('Error:', error)
+})
