@@ -1,8 +1,20 @@
-fetch('http://192.168.137.23/api/floor/3')
-.then(response => response.json())
-.then(data => {
+function updateData() {
+  fetch('http://192.168.137.23/api/floor/3')
+  .then(response => response.json())
+  .then(data => {
+
+    displayData(data)
+
+  })
+  .catch(error => {
+    console.error('Error:', error)
+  })
+}
+
+function displayData(data){
   const roomTable = document.getElementById('room-table')
   const tbody = roomTable.getElementsByTagName('tbody')[0]
+  tbody.innerHTML = ""
 
   data.forEach(room => {
     const tr = document.createElement('tr')
@@ -20,7 +32,6 @@ fetch('http://192.168.137.23/api/floor/3')
       statusTd.classList.add("red")
     } else {
       statusTd.classList.add("green")
-
     }
     statusTd.textContent = status
 
@@ -28,8 +39,9 @@ fetch('http://192.168.137.23/api/floor/3')
     tr.appendChild(statusTd)
     tr.appendChild(freePlacesTd)
     tbody.appendChild(tr)
-  })
+   
 })
-.catch(error => {
-  console.error('Error:', error)
-})
+}
+
+updateData()
+setInterval(updateData, 60000)
