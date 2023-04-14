@@ -2,6 +2,7 @@ body {
 
           background-color: black;
           color: white;
+
 }
 
 .container {
@@ -30,3 +31,6 @@ body {
 #room-table td:first-child {
           text-align: left;
 }
+::-webkit-scrollbar {
+  display:  none;
+ }
