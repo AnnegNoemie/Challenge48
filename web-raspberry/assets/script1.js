@@ -1,5 +1,5 @@
 function updateData() {
-  fetch('http://192.168.137.23/api/floor/1')
+  fetch('http://server.local/api/floor/1')
   .then(response => response.json())
   .then(data => {
 

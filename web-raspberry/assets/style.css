@@ -46,3 +46,7 @@ body {
 .grey {
   color: grey;
 }
+
+.title {
+  text-align: center;
+}

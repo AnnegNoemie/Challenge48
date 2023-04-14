@@ -1,5 +1,5 @@
 function updateData() {
-  fetch('http://192.168.137.23/api/rooms')
+  fetch('http://server.local/api/rooms')
   .then(response => response.json())
   .then(data => {
 
