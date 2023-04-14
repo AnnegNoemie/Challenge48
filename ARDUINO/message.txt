@@ -1,0 +1,170 @@
+#include <Wire.h>
+#include <LiquidCrystal_PCF8574.h>
+#include <SPI.h>
+#include <MFRC522.h>
+#include <WiFiNINA.h>
+#include <HttpClient.h>
+#include <ArduinoJson.h>
+
+const char* ssid = "team4";
+const char* password = "team4team4";
+
+const String idSalle = "404";
+
+const byte SDA_PIN = 10;
+const byte SCK_PIN = 13;
+const byte MOSI_PIN = 11;
+const byte MISO_PIN = 12;
+const byte RST_PIN = 9;
+
+LiquidCrystal_PCF8574 lcd(0x27);
+
+MFRC522 rfid(SDA_PIN, RST_PIN);
+
+unsigned long lastApiCallMillis = 0;
+unsigned long badgeDisplayDuration = 2000;
+unsigned long previousMillisBadge = 0;
+bool badgeDisplayed = false;
+String previousApiResponse = "";
+
+WiFiClient wifi;
+HttpClient client = HttpClient(wifi, "192.168.137.23", 80);
+
+void setup() {
+  Serial.begin(115200);
+
+  // Tente de se connecter au réseau WiFi
+  Serial.print("Connexion au réseau WiFi ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  // Connecté au réseau WiFi
+  Serial.println();
+  Serial.println("Connecté au réseau WiFi !");
+  Serial.print("Adresse IP: ");
+  Serial.println(WiFi.localIP());
+
+  lcd.begin(16, 2);
+  lcd.setBacklight(255);
+
+  SPI.begin();
+  rfid.PCD_Init();
+
+  String path = "/api/room/404/";
+  Serial.println("Envoi de la requete a l'API...");
+  client.get(path);
+
+  // Analyse de la réponse de l'API
+  String apiResponse = client.responseBody();
+  
+  Serial.println(apiResponse);
+
+  updateDisplay(apiResponse);
+
+  lastApiCallMillis = millis();
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+
+  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+    Serial.print("Badge RFID détecté! UID: ");
+    
+    // Affiche l'UID du badge RFID
+    for (byte i = 0; i < rfid.uid.size; i++) {
+      if (i > 0) {
+        Serial.print("-");
+      }
+      Serial.print(rfid.uid.uidByte[i], HEX);
+    } 
+    String idBadge = "";
+    for (byte i = 0; i < rfid.uid.size; i++) {
+      idBadge += String(rfid.uid.uidByte[i], HEX);
+    }
+
+    String path = "/api/room/";
+    path.concat(idSalle);
+    path.concat("/");
+    path.concat(idBadge);
+    Serial.println("Envoi de la requete a l'API...");
+    client.get(path);
+
+  // Analyse de la réponse de l'API
+  String apiResponse = client.responseBody();
+    
+    if (apiResponse.length() > 0) {
+      displayBadgeInfo(apiResponse);
+      badgeDisplayed = true;
+      previousMillisBadge = currentMillis;
+      previousApiResponse = apiResponse;
+    } else {
+      updateDisplay(previousApiResponse);
+    }
+  }
+
+  if (badgeDisplayed && currentMillis - previousMillisBadge >= badgeDisplayDuration) {
+    badgeDisplayed = false;
+    updateDisplay(previousApiResponse);
+  }
+}
+
+void displayBadgeInfo(String apiResponse) {
+
+  String name = getValue(apiResponse, "first_name") + " " + getValue(apiResponse, "last_name");
+
+  // Envoi de la requête à l'API
+  String path = "/api/room/404";
+  Serial.println("Envoi de la requete a l'API...");
+  client.get(path);
+
+  // Conversion de la réponse JSON en objet
+  DynamicJsonDocument doc(1024);
+  deserializeJson(doc, apiResponse);
+
+  // Affichage de certaines informations de la réponse
+  String firstName = doc["first_name"].as<String>();
+  String lastName = doc["last_name"].as<String>();
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(firstName);
+  lcd.setCursor(0, 1);
+  lcd.print(lastName);
+}
+
+void updateDisplay(String apiResponse) {
+
+  // Conversion de la réponse JSON en objet
+  DynamicJsonDocument doc(1024);
+  deserializeJson(doc, apiResponse);
+
+  int presents = doc["presents"].as<int>();
+  int booked = doc["booked"].as<int>();
+  int capacity = doc["capacity"].as<int>();
+
+  // Update display
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Places: ");
+  lcd.print(presents);
+  lcd.print("/");
+  lcd.print(capacity);
+  lcd.setCursor(0, 1);
+  lcd.print(capacity - (booked + presents));
+  lcd.print(" restantes");
+}
+
+String getValue(String data, String key) {
+  int found = data.indexOf(key);
+  if (found == -1) return "";
+  int start = data.indexOf(':', found) + 1;
+  int end = data.indexOf(',', start);
+  if (end == -1) end = data.indexOf('}', start);
+  return data.substring(start + 1, end - 1);
+}
